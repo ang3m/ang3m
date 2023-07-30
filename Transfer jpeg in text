@@ -1,0 +1,156 @@
+ import tkinter as tk
+from tkinter import filedialog
+import psycopg2
+import cv2
+import pytesseract
+
+# Fonction pour insérer les données dans la base de données
+def insert_data_to_db(data):
+    try:
+        connection = psycopg2.connect(
+            host="localhost",
+            database="postgres",
+           
+        )
+        cursor = connection.cursor()
+        
+        # Insérer les données dans la base de données
+        for entry in data:
+            query = "INSERT INTO camera (date, heure, immatriculation, sens, type_de_vehicule) VALUES (%s, %s, %s, %s, %s, %s)"
+            cursor.execute(query, entry)
+        
+        connection.commit()
+        print("Données insérées avec succès !")
+
+    except (Exception, psycopg2.Error) as error:
+        print("Erreur lors de l'insertion des données :", error)
+
+    finally:
+        # Fermer la connexion
+        if connection:
+            cursor.close()
+            connection.close()
+
+# Fonction pour traiter l'image et extraire les valeurs
+def process_image(file_path):
+    # Votre code pour traiter l'image et extraire les informations
+    # Par exemple, utiliser OpenCV pour détecter le texte de la plaque d'immatriculation
+    # et un modèle de réseau de neurones pour détecter le type de véhicule
+    # Remplacez le contenu ci-dessous par votre code de traitement d'image réel
+    # Les valeurs immatriculation_value et type_de_vehicule_value doivent être extraites ici.
+  # Fonction pour insérer les données dans la base de données
+    # Votre code pour insérer les données dans la base de données, similaire à la version précédente
+
+# Fonction pour traiter l'image et extraire les valeurs
+
+    # Charger l'image à partir du fichier
+    image = cv2.imread(file_path)
+
+    # Conversion de l'image en niveaux de gris pour faciliter la détection du texte
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Appliquer un filtre de seuillage pour mettre en évidence le texte
+    _, threshold_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Utiliser Tesseract OCR pour détecter le texte de la plaque d'immatriculation
+    immatriculation_value = pytesseract.image_to_string(threshold_image, config='--psm 7')
+
+    # Supposer que vous avez un modèle pré-entraîné pour détecter le type de véhicule
+    # Ici, nous utilisons simplement une valeur factice pour l'exemple
+    type_de_vehicule_value = "Voiture"
+
+    return immatriculation_value, type_de_vehicule_value
+
+# Fonction pour ouvrir la boîte de dialogue de sélection de fichier et ajouter une photo
+def open_file_dialog():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        immatriculation_value, type_de_vehicule_value = process_image(file_path)
+        # Mettre à jour les champs de saisie avec les valeurs extraites
+        immatriculation_entry.delete(0, tk.END)
+        immatriculation_entry.insert(0, immatriculation_value)
+        type_de_vehicule_entry.delete(0, tk.END)
+        type_de_vehicule_entry.insert(0, type_de_vehicule_value)
+
+# Fonction pour ajouter les données saisies dans la base de données
+def add_data_to_db():
+ 
+    date_value = date_entry.get()
+    heure_value = heure_entry.get()
+    immatriculation_value = immatriculation_entry.get()
+    sens_value = sens_entry.get()
+    type_de_vehicule_value = type_de_vehicule_entry.get()
+
+    data_to_insert = [(date_value, heure_value, immatriculation_value, sens_value, type_de_vehicule_value)]
+    insert_data_to_db(data_to_insert)
+
+def view_data_in_db():
+    try:
+        connection = psycopg2.connect(
+            host="localhost",
+            database="postgres",
+    
+        )
+        cursor = connection.cursor()
+
+        # Sélectionner toutes les lignes de la table vehicle_data
+        cursor.execute("SELECT * FROM camera")
+        rows = cursor.fetchall()
+
+        # Afficher les données
+        for row in rows:
+            print(row)
+
+    except (Exception, psycopg2.Error) as error:
+        print("Erreur lors de la récupération des données :", error)
+
+    finally:
+        # Fermer la connexion
+        if connection:
+            cursor.close()
+            connection.close()
+
+# Appeler la fonction pour visualiser les données dans la base de données
+view_data_in_db()
+
+# Créer une fenêtre
+window = tk.Tk()
+window.title("Ajouter une photo et ses valeurs")
+
+# Éléments de la fenêtre
+
+date_label = tk.Label(window, text="Date:")
+date_label.pack()
+date_entry = tk.Entry(window)
+date_entry.pack()
+
+heure_label = tk.Label(window, text="Heure:")
+heure_label.pack()
+heure_entry = tk.Entry(window)
+heure_entry.pack()
+
+immatriculation_label = tk.Label(window, text="Immatriculation:")
+immatriculation_label.pack()
+immatriculation_entry = tk.Entry(window)
+immatriculation_entry.pack()
+
+sens_label = tk.Label(window, text="Sens:")
+sens_label.pack()
+sens_entry = tk.Entry(window)
+sens_entry.pack()
+
+type_de_vehicule_label = tk.Label(window, text="Type de véhicule:")
+type_de_vehicule_label.pack()
+type_de_vehicule_entry = tk.Entry(window)
+type_de_vehicule_entry.pack()
+
+add_button = tk.Button(window, text="Ajouter une photo", command=open_file_dialog)
+add_button.pack()
+
+insert_button = tk.Button(window, text="Insérer dans la base de données", command=add_data_to_db)
+insert_button.pack()
+
+insert_button = tk.Button(window, text="Voir la base de données", command=add_data_to_db)
+insert_button.pack()
+
+window.mainloop()
